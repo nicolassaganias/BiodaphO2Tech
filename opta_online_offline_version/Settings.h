@@ -2,10 +2,10 @@
 #define CLIENT_ID "OPTA TEST"
 #define WIFI_SSID "Can_Saguer_Wifi"
 #define WIFI_PASSWORD "cansaguer2"
-#define SERVER_ADDRESS "154.38.180.196"
+#define SERVER_ADDRESS "94.143.139.172"
 #define SERVER_PORT 1883
-#define SERVER_USER_NAME "nico"
-#define SERVER_USER_PASSWORD "volvegallegovendido"
+#define SERVER_USER_NAME "nicolas"
+#define SERVER_USER_PASSWORD "nico177"
 
 /* Sensor pins */
 #define SENSOR_DISSOLVE_OXYGEN_PIN            A0        // Dissolve oxygen sensor kit
