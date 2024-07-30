@@ -19,6 +19,7 @@ void setup() {
 }
 
 void loop() {
+  
   runOptaClient();
   if (wifiConnected && serverConnected) {
     sendDataToServer();

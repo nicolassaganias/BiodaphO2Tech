@@ -1,5 +1,5 @@
 /* Server credentials */
-#define CLIENT_ID "OPTA TEST"
+#define CLIENT_ID "OPTA T001"
 #define WIFI_SSID "Can_Saguer_Wifi"
 #define WIFI_PASSWORD "cansaguer2"
 #define SERVER_ADDRESS "94.143.139.172"

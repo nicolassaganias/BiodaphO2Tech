@@ -11,9 +11,11 @@ bool serverConnected = false;
 
 // wifi connection handler function
 void connectToWiFi() {
+  Serial.println("Wifi try to connect");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);  // connect to the wifi network
-  while (millis() - last_wifi_time < 2000) {
+  while (millis() - last_wifi_time < 10000) {
     if (WiFi.status() == WL_CONNECTED) {
+      delay(5000);
       Serial.println("Wi-Fi Connected!");
       wifiConnected = true;
       break;
