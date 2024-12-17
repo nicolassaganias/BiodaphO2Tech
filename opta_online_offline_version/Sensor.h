@@ -88,10 +88,10 @@ float readECADC() {
   }
   float avgValue = rawValue / 10.0;
   float voltage = 0.002700 * avgValue - 0.0084;  // calculate the voltage
-  // Serial.print(" ADC: ");
-  // Serial.print(avgValue);
-  // Serial.print(" | Voltage: ");
-  // Serial.print(voltage);
+   Serial.print(" ADC: ");
+   Serial.print(avgValue);
+   Serial.print(" | Voltage: ");
+   Serial.print(voltage);
   return voltage;  // return the voltage value
 }
 
