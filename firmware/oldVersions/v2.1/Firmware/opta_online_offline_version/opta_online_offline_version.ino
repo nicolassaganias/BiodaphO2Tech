@@ -1,15 +1,15 @@
 /*
-  @project          : Life V2.0
-  @firmware version : v1.1.1
+@project          : Life V2.0
+@firmware version : v1.0.0 
 */
 
 #include "Settings.h"
 #include "GlobalTime.h"
-#include "JsonMaker.h"
 #include "Sensor.h"
 #include "OptaClient.h"
 
 unsigned long last_print = 0;
+unsigned long prevEmailTime = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -20,9 +20,17 @@ void setup() {
 
 void loop() {
   runOptaClient();
-  sendDataToServer();
+  //if (wifiConnected && serverConnected) {
+    //sendDataToServer();
+  // }
   if (millis() - last_print > 3000) {
     Serial.println("Oxygen: " + String(readOxygenSensor()) + "\t\tEC: " + String(readConductivitySensor()) + "\t\tpH: " + String(readpHSensor()));
     last_print = millis();
   }
+
+  if (millis() - prevEmailTime > EMAIL_DELAY) {
+    sendSensorEmail(readOxygenSensor(), readConductivitySensor(), readpHSensor());
+    prevEmailTime = millis();
+  }
 }
+

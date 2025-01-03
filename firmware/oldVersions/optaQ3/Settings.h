@@ -2,6 +2,7 @@
 #define CLIENT_ID "OPTA Q3"
 #define WIFI_SSID "Can_Saguer_Wifi"
 #define WIFI_PASSWORD "cansaguer2"
+
 #define SERVER_ADDRESS "94.143.139.172"
 #define SERVER_PORT 1883
 #define SERVER_USER_NAME "nicolas"
