@@ -2,7 +2,7 @@
 //#define CLIENT_ID "OPTA TEST"
 
 #define WIFI_SSID "Can_Saguer_Wifi"
-#define WIFI_PASSWORD "cansaguer2"
+#define WIFI_PASSWORD "cansaguer2" // oT0,2LiM-WlZ OutdoorRouter Admin Pass. la "l"es una L
 #define EMAIL_ADDRESS "nicosaga@gmail.com"
 #define EMAIL_PASSWORD "asqa ylrd ksro myyb"  // otra app pass: fdyj irkk avxn pkoe
 #define RECEIVER_EMAIL "nicolas.saganias@udg.edu"
