@@ -6,8 +6,8 @@
 #define EMAIL_ADDRESS "nicosaga@gmail.com"
 #define EMAIL_PASSWORD "asqa ylrd ksro myyb"  // otra app pass: fdyj irkk avxn pkoe
 #define RECEIVER_EMAIL "nicolas.saganias@udg.edu"
-#define EMAIL_DELAY 5 * 60 * 1000 //5 minutes
-#define PRINT_DELAY 5 * 1000 //5 seconds
+#define EMAIL_DELAY 300000 //5 minutes
+#define PRINT_DELAY 5000 //5 seconds
 /* Sensor pins */
 #define SENSOR_DISSOLVE_OXYGEN_PIN A0  // Dissolve oxygen sensor kit
 #define SENSOR_CONDUCTIVITY_PIN A1     // Conductivity transmitter sensor kit
