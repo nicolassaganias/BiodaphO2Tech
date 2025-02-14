@@ -27,3 +27,17 @@ String getGlobalTime() {
            timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
   return iso8601Time;
 }
+
+// Function to get a formatted timestamp
+String getTimestamp() {
+    timeClient.update();
+    time_t rawTime = timeClient.getEpochTime();
+    struct tm *timeInfo;
+    timeInfo = gmtime(&rawTime);
+    
+    char formattedTime[30];
+    snprintf(formattedTime, sizeof(formattedTime), "%02d/%02d/%04d - %02d:%02d:%02d",
+             timeInfo->tm_mday, timeInfo->tm_mon + 1, timeInfo->tm_year + 1900,
+             timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+    return formattedTime;
+}

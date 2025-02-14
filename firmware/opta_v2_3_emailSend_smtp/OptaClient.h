@@ -59,18 +59,7 @@ void checkWiFiConnection() {
     }
   }
 }
-// Function to get a formatted timestamp
-String getTimestamp() {
-  timeClient.update();
-  int day = timeClient.getDay();
-  int month = timeClient.getMonth();
-  int year = timeClient.getYear();
-  int hour = timeClient.getHours();
-  int minute = timeClient.getMinutes();
-  int second = timeClient.getSeconds();
 
-  return String(day) + "/" + String(month) + "/" + String(year) + " - " + String(hour) + ":" + String(minute) + ":" + String(second);
-}
 // Function to send sensor data email
 void sendSensorDataEmail(float oxygen, float ec, float ph) {
   EMailSender::EMailMessage message;
@@ -83,12 +72,11 @@ void sendSensorDataEmail(float oxygen, float ec, float ph) {
   message.subject = "Sensor Data Report - Unknown Station - " + getTimestamp();
 #endif
 
-
-  message.message = "Sensor Readings:\n";
-  message.message += "Oxygen: " + String(oxygen) + " mg/L\n";
-  message.message += "EC: " + String(ec) + " mS/cm\n";
+  message.message = "Sensor Readings: \n";
+  message.message += "Oxygen: " + String(oxygen) + " mg/L \n";
+  message.message += "EC: " + String(ec) + " mS/cm \n";
   message.message += "pH: " + String(ph) + "\n";
-  message.message += "\nRegards, \nSensor System";
+  message.message += "\nRegards";
 
   EMailSender::Response resp = emailSend.send(EMAIL_ADDRESS, message);
   Serial.println(resp.status);
@@ -115,13 +103,13 @@ void checkAndSendEmail() {
   int currentDay = timeClient.getDay();
 
 #ifdef ST1
-  int targetMinute = 15;
+  int targetMinute = 45;
   int targetSecond = 0;
 #elif defined(ST2)
-  int targetMinute = 15;
-  int targetSecond = 1;
+  int targetMinute = 45;
+  int targetSecond = 2;
 #else
-  int targetMinute = 15;
+  int targetMinute = 45;
   int targetSecond = 0;
 #endif
 
