@@ -42,7 +42,7 @@ float currentOxygen, currentEc, currentPh;
 // Print sensor diagnostics
 void printInfo() {
   Serial.println("-------- SENSOR DIAGNOSTICS --------");
-  
+
   // Imprimir resultados de Oxígeno
   Serial.print("[Oxygen] Raw ADC: ");
   Serial.print(rawValueOxygen);
@@ -50,7 +50,7 @@ void printInfo() {
   Serial.print(voltageOxygen);
   Serial.print(" | Current: ");
   Serial.println(currentOxygen);
-  
+
   // Imprimir resultados de Conductividad Eléctrica (EC)
   Serial.print("[EC] Raw ADC: ");
   Serial.print(rawValueEc);
@@ -58,7 +58,7 @@ void printInfo() {
   Serial.print(voltageEc);
   Serial.print(" | Current: ");
   Serial.println(currentEc);
-  
+
   // Imprimir resultados de pH
   Serial.print("[pH] Raw ADC: ");
   Serial.print(rawValuePh);
@@ -66,7 +66,7 @@ void printInfo() {
   Serial.print(voltagePh);
   Serial.print(" | Current: ");
   Serial.println(currentPh);
-  
+
   Serial.println("------------------------------------");
 }
 
@@ -117,10 +117,7 @@ float readConductivitySensor() {
   ec_sensor_value = mapFloat(current, 4.00, 20.00, EC_SENS_LOWER_VALUE, EC_MAX_SENSOR_VALUE);
   ec_sensor_value = constrain(ec_sensor_value, 1.0, EC_MAX_SENSOR_VALUE);
 
-  if (ec_sensor_value <= 1.0) {
-    Serial.println("EC Warning: Incorrect probe selection or sensor error.");
-  }
-  //ec_sensor_value = random(120000, 140000) / 100;
+ // ec_sensor_value = random(120000, 140000) / 100;
   return ec_sensor_value;
 }
 

@@ -15,9 +15,12 @@
 #define SENSOR_DISSOLVE_OXYGEN_PIN A0  // Dissolve oxygen sensor kit
 #define SENSOR_CONDUCTIVITY_PIN A1     // Conductivity transmitter sensor kit
 #define SENSOR_PH_PIN A2               // pH sensor kit
+
+const unsigned long ntpUpdateInterval = 30 * 59 * 1000;  // 30 minutos en milisegundos con 1 min de delay delay para que se desfase del envío de mail
+const unsigned long PRINT_DELAY = 5000;                  //5 seconds
+const unsigned long EMAIL_INTERVAL = 60 * 60 * 1000;     // 1 hour in milliseconds
+unsigned long last_print, lastStatusEmailSent, lastEmailSent = 0;
 unsigned long lastNTPUpdate = 0;
 
-const unsigned long ntpUpdateInterval = 5 * 60 * 1000;  // 5 minutos en milisegundos
-const unsigned long PRINT_DELAY = 5000;                 //5 seconds
-const unsigned long EMAIL_INTERVAL = 60 * 60 * 1000;    // 1 hour in milliseconds
-unsigned long last_print, lastStatusEmailSent, lastEmailSent = 0;
+unsigned long releStartTime = 0;  // Tiempo de activación del relé
+bool releActivo = false;          // Estado del relé

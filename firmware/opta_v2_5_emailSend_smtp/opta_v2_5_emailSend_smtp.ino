@@ -27,7 +27,6 @@ void setup() {
 
 void loop() {
   checkWiFiConnection();  // Revisa y reconecta sin delay()
-
   if ((long)(millis() - last_print) > PRINT_DELAY) {  // Prints Sensor Values in Serial Monitor
     Serial.println("Oxygen: " + String(readOxygenSensor()) + "\t\tEC: " + String(readConductivitySensor()) + "\t\tpH: " + String(readpHSensor()));
     last_print = millis();
