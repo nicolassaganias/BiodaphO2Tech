@@ -3,44 +3,43 @@
 #include "OptaClient.h"
 
 void setup() {
+  digitalWrite(LED4, HIGH);  // Encender LED al inicio
+
+  WiFi.disconnect();  // Reset WiFi connection
   delay(3000);
-  digitalWrite(LED1, LOW);
+
   Serial.begin(115200);
   pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
   pinMode(LED3, OUTPUT);
   pinMode(LED4, OUTPUT);
-  analogReadResolution(12);  // set resolution 12-bit (don't change it)
+  analogReadResolution(12);  // set resolution 12-bit (no cambiar)
 
-  // Reset WiFi before attempting to connect
-  WiFi.disconnect();  // Reset WiFi connection
-  delay(1000);        // Short delay to ensure it fully resets
-  connectToWiFi();    // Try connecting
+  connectToWiFi();  // Primer intento
 
-  // Intentar conectar a WiFi hasta lograrlo
+  // Reintentar si falla
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Attempting to connect to WiFi...");
+    Serial.println("Retrying WiFi...");
+    delay(5000);
     connectToWiFi();
-    delay(5000);  // Esperar antes de reintentar
   }
 
-  // Ensure NTP sync before proceeding
   Serial.println("Attempting to sync NTP...");
   syncNTP_UDP();
   delay(1000);
 
-  // Send initial email after connection
   float oxygen = readOxygenSensor();
   float ec = readConductivitySensor();
   float ph = readpHSensor();
-  sendFirstSensorDataEmail(oxygen,ec,ph);
+  sendFirstSensorDataEmail(oxygen, ec, ph);
   Serial.println("\nInitial sensor data email sent.\n");
 }
 
 void loop() {
   blinkLED(LED1, 5000);
+  digitalWrite(LED4, LOW);
   checkWiFiConnection();  // Revisa y reconecta sin delay()
-  checkFailure();
+  //checkFailure();
 
   if ((long)(millis() - last_print) > PRINT_DELAY) {  // Prints Sensor Values in Serial Monitor
     Serial.println("Oxygen: " + String(readOxygenSensor()) + "\t\tEC: " + String(readConductivitySensor()) + "\t\tpH: " + String(readpHSensor()));
@@ -57,8 +56,8 @@ void loop() {
     syncNTP_UDP();
     lastNTPUpdate = millis();
   }
-  
-  if(millis() - lastDataUpdate >= DATA_INTERVAL){
+
+  if (millis() - lastDataUpdate >= DATA_INTERVAL) {
     lastDataUpdate = millis();
     float oxygen = readOxygenSensor();
     float ec = readConductivitySensor();

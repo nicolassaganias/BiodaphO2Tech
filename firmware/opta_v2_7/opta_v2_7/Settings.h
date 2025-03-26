@@ -1,5 +1,5 @@
-const unsigned long EMAIL_INTERVAL = 12 /*hours*/ * 60 /*minutes*/ * 60 /*seconds*/ * 1000 /*milliseconds*/;// 12 hour email sending interval in milliseconds
-const unsigned long DATA_INTERVAL = 60 /*minutes*/ * 60 /*seconds*/ * 1000 /*milliseconds*/;                // 30 minutes data tracking interval in milliseconds
+const unsigned long EMAIL_INTERVAL = 8 /*hours*/ * 60 /*minutes*/ * 60 /*seconds*/ * 1000 /*milliseconds*/;// 12 hour email sending interval in milliseconds
+const unsigned long DATA_INTERVAL = 30 /*minutes*/ * 60 /*seconds*/ * 1000 /*milliseconds*/;                // 30 minutes data tracking interval in milliseconds
 
 const unsigned long numberOfData = (EMAIL_INTERVAL / DATA_INTERVAL) + 1;
 String allData[numberOfData];

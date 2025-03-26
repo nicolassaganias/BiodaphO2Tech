@@ -47,7 +47,7 @@ void syncNTP_UDP() {
 
   if (!WiFi.hostByName(ntpServer, ntpServerIP)) {
     Serial.println("❌ Failed to resolve NTP server.");
-    blinkLED(LED3,1000);
+    blinkLED(LED3, 1000);
     return;
   }
 
@@ -81,6 +81,14 @@ void syncNTP_UDP() {
 
     Serial.print("🕒 Unix Time Synced (with offset): ");
     Serial.println(epoch);
+
+    // Mostrar fecha y hora legible
+    time_t rawtime = epoch;
+    struct tm * timeinfo = localtime(&rawtime);
+    char buffer[30];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+    Serial.print("📅 Fecha y hora local: ");
+    Serial.println(buffer);
   } else {
     Serial.println("❌ No response from NTP server. UDP may be blocked.");
     digitalWrite(LED3, LOW);
@@ -89,27 +97,31 @@ void syncNTP_UDP() {
 
 // Connect to Wi-Fi
 void connectToWiFi() {
-    Serial.println("Attempting to connect to WiFi...");
-    Serial.print("Connecting to Wi-Fi: ");
-    Serial.println(WIFI_SSID);
+  Serial.println("Attempting to connect to WiFi...");
+  Serial.print("Connecting to Wi-Fi: ");
+  Serial.println(WIFI_SSID);
 
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);  // Start WiFi connection
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-    unsigned long startAttemptTime = millis();
-    unsigned long previousMillis = millis();
+  unsigned long startAttemptTime = millis();
+  const unsigned long timeout = 15000;  // Esperar hasta 15 segundos
 
+  while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < timeout) {
+    delay(500);
+    Serial.print(".");
+  }
 
-    if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("\n✅ Wi-Fi Connected!");
-        Serial.print("📡 IP Address: ");
-        Serial.println(WiFi.localIP());
-        digitalWrite(LED2, HIGH);  // Keep LED2 solid ON when connected
-        wifiConnected = true;
-    } else {
-        Serial.println("\n❌ Error: Unable to connect to Wi-Fi.");
-        digitalWrite(LED2, LOW);  // Keep LED OFF if connection fails
-        wifiConnected = false;
-    }
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\n✅ Wi-Fi Connected!");
+    Serial.print("📡 IP Address: ");
+    Serial.println(WiFi.localIP());
+    digitalWrite(LED2, HIGH);
+    wifiConnected = true;
+  } else {
+    Serial.println("\n❌ Error: Unable to connect to Wi-Fi.");
+    digitalWrite(LED2, LOW);
+    wifiConnected = false;
+  }
 }
 
 
