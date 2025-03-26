@@ -7,6 +7,9 @@
 const char* ntpServer = "pool.ntp.org";  //const char* ntpServer = "pool.ntp.org";
 const int ntpPort = 123;
 WiFiUDP ntpUDP;
+bool ntpSynced = false;
+bool initialEmailSent = false;
+
 unsigned long currentEpoch = 0;  // Store last synced time
 #define TIMEZONE_OFFSET 3600     // Adjust for 1-hour difference (in seconds)
 
@@ -35,65 +38,39 @@ void blinkLED(int pin, int interval) {
 }
 
 void syncNTP_UDP() {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("❌ WiFi is not connected. Cannot sync NTP.");
-    return;
-  }
+  if (WiFi.status() != WL_CONNECTED) return;
 
-  Serial.println("🔄 Sending raw NTP request...");
-
-  ntpUDP.begin(ntpPort);
   IPAddress ntpServerIP;
-
-  if (!WiFi.hostByName(ntpServer, ntpServerIP)) {
-    Serial.println("❌ Failed to resolve NTP server.");
-    blinkLED(LED3, 1000);
-    return;
-  }
-
-  Serial.print("🌎 Using NTP Server: ");
-  Serial.println(ntpServerIP);
+  if (!WiFi.hostByName(ntpServer, ntpServerIP)) return;
 
   byte packetBuffer[48] = { 0 };
   packetBuffer[0] = 0b11100011;  // LI, Version, Mode
-  packetBuffer[1] = 0;           // Stratum
-  packetBuffer[2] = 6;           // Polling Interval
-  packetBuffer[3] = 0xEC;        // Peer Clock Precision
 
-  ntpUDP.beginPacket(ntpServerIP, 123);  // Send request to port 123
+  ntpUDP.beginPacket(ntpServerIP, 123);
   ntpUDP.write(packetBuffer, 48);
   ntpUDP.endPacket();
 
-  delay(1000);  // Wait for response
-
-  int packetSize = ntpUDP.parsePacket();
-  if (packetSize) {
-    Serial.println("✅ NTP response received!");
-    digitalWrite(LED3, HIGH);
-    ntpUDP.read(packetBuffer, 48);
-    unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
-    unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
-    unsigned long epoch = (highWord << 16 | lowWord) - 2208988800UL;  // Convert to Unix time
-
-    epoch += TIMEZONE_OFFSET;  // Apply timezone correction
-
-    currentEpoch = epoch;  // Store corrected time for getTimestamp()
-
-    Serial.print("🕒 Unix Time Synced (with offset): ");
-    Serial.println(epoch);
-
-    // Mostrar fecha y hora legible
-    time_t rawtime = epoch;
-    struct tm * timeinfo = localtime(&rawtime);
-    char buffer[30];
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
-    Serial.print("📅 Fecha y hora local: ");
-    Serial.println(buffer);
-  } else {
-    Serial.println("❌ No response from NTP server. UDP may be blocked.");
-    digitalWrite(LED3, LOW);
+  unsigned long startTime = millis();
+  int packetSize = 0;
+  while ((packetSize = ntpUDP.parsePacket()) == 0 && millis() - startTime < 1500) {
+    delay(10);
   }
+
+  if (!packetSize) {
+    ntpUDP.stop();
+    return;
+  }
+
+  ntpUDP.read(packetBuffer, 48);
+  ntpUDP.stop();
+
+  unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
+  unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+  unsigned long epoch = (highWord << 16 | lowWord) - 2208988800UL;
+  epoch += TIMEZONE_OFFSET;
+  currentEpoch = epoch;
 }
+
 
 // Connect to Wi-Fi
 void connectToWiFi() {
@@ -196,12 +173,12 @@ void checkFailure() {
   }
 }
 
-void collectNewData(float oxygen, float ec, float ph){
-  allData[nextDataIndex] = getTimestamp()+ " &emsp; Oxygen: " + String(oxygen) + " mg/L" + " &emsp; EC: " + String(ec) + " mS/cm" + " &emsp; pH: " + String(ph) + "<br>";
+void collectNewData(float oxygen, float ec, float ph) {
+  allData[nextDataIndex] = getTimestamp() + " &emsp; Oxygen: " + String(oxygen) + " mg/L" + " &emsp; EC: " + String(ec) + " mS/cm" + " &emsp; pH: " + String(ph) + "<br>";
   lastDataIndex = nextDataIndex;
   nextDataIndex++;
-  if(nextDataIndex >= numberOfData){
-     nextDataIndex = 0;
+  if (nextDataIndex >= numberOfData) {
+    nextDataIndex = 0;
   }
 }
 
@@ -218,10 +195,10 @@ void sendSensorDataEmail() {
   message.subject = "Sensor Data Report - Unknown Station - " + getTimestamp();
 #endif
   message.message = "Sensor Readings:<br>";
-  for(int i = nextDataIndex ; i < numberOfData; i++){
+  for (int i = nextDataIndex; i < numberOfData; i++) {
     message.message += allData[i];
   }
-  for(int i = 0 ; i < nextDataIndex; i++){
+  for (int i = 0; i < nextDataIndex; i++) {
     message.message += allData[i];
   }
   message.message += "<br>Regards";

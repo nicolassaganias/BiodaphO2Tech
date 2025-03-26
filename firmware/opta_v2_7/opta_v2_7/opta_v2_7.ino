@@ -3,9 +3,9 @@
 #include "OptaClient.h"
 
 void setup() {
-  digitalWrite(LED4, HIGH);  // Encender LED al inicio
+  digitalWrite(LED4, HIGH);
 
-  WiFi.disconnect();  // Reset WiFi connection
+  WiFi.disconnect();
   delay(3000);
 
   Serial.begin(115200);
@@ -13,51 +13,71 @@ void setup() {
   pinMode(LED2, OUTPUT);
   pinMode(LED3, OUTPUT);
   pinMode(LED4, OUTPUT);
-  analogReadResolution(12);  // set resolution 12-bit (no cambiar)
+  analogReadResolution(12);
 
-  connectToWiFi();  // Primer intento
+  connectToWiFi();
 
-  // Reintentar si falla
   while (WiFi.status() != WL_CONNECTED) {
     Serial.println("Retrying WiFi...");
     delay(5000);
     connectToWiFi();
   }
 
-  Serial.println("Attempting to sync NTP...");
-  syncNTP_UDP();
-  delay(1000);
-
-  float oxygen = readOxygenSensor();
-  float ec = readConductivitySensor();
-  float ph = readpHSensor();
-  sendFirstSensorDataEmail(oxygen, ec, ph);
-  Serial.println("\nInitial sensor data email sent.\n");
+  ntpUDP.begin(ntpPort);  // Solo se hace una vez
 }
 
+
 void loop() {
-  blinkLED(LED1, 5000);
   digitalWrite(LED4, LOW);
-  checkWiFiConnection();  // Revisa y reconecta sin delay()
-  //checkFailure();
+  checkWiFiConnection();
 
-  if ((long)(millis() - last_print) > PRINT_DELAY) {  // Prints Sensor Values in Serial Monitor
-    Serial.println("Oxygen: " + String(readOxygenSensor()) + "\t\tEC: " + String(readConductivitySensor()) + "\t\tpH: " + String(readpHSensor()));
-    last_print = millis();
+  // Etapa 1: Sincronizar NTP
+  if (!ntpSynced && WiFi.status() == WL_CONNECTED) {
+    syncNTP_UDP();
+    if (currentEpoch > 100000) {  // Verificamos si el NTP se sincronizó correctamente
+      ntpSynced = true;
+      lastNTPUpdate = millis();
+      Serial.println("✅ NTP synced on first loop.");
+    } else {
+      Serial.println("❌ NTP not synced yet. Waiting...");
+      delay(3000);  // Esperamos antes de reintentar
+      return;
+    }
   }
 
-  if ((long)(millis() - lastEmailSent) > EMAIL_INTERVAL) {  // Sends Sensor Values by e-mail once every EMAIL_INTERVAL
-    sendSensorDataEmail();
-    lastEmailSent = millis();
-    Serial.print("\nSensor data email sent.\n");
+  // Etapa 2: Enviar primer email
+  if (!initialEmailSent) {
+    float oxygen = readOxygenSensor();
+    float ec = readConductivitySensor();
+    float ph = readpHSensor();
+    sendFirstSensorDataEmail(oxygen, ec, ph);
+    Serial.println("✅ First sensor email sent.");
+    initialEmailSent = true;
+    lastEmailSent = millis();  // Para que no se mande enseguida el siguiente
   }
 
-  if (millis() - lastNTPUpdate >= ntpUpdateInterval) {
+  // Etapa 3: ejecución normal
+  blinkLED(LED1, 5000);
+
+  if ((millis() - lastNTPUpdate) > ntpUpdateInterval) {
     syncNTP_UDP();
     lastNTPUpdate = millis();
   }
 
-  if (millis() - lastDataUpdate >= DATA_INTERVAL) {
+  if ((millis() - last_print) > PRINT_DELAY) {
+    Serial.println("Oxygen: " + String(readOxygenSensor()) +
+                   "\t\tEC: " + String(readConductivitySensor()) +
+                   "\t\tpH: " + String(readpHSensor()));
+    last_print = millis();
+  }
+
+  if ((millis() - lastEmailSent) > EMAIL_INTERVAL) {
+    sendSensorDataEmail();
+    lastEmailSent = millis();
+    Serial.println("Sensor data email sent.");
+  }
+
+  if ((millis() - lastDataUpdate) > DATA_INTERVAL) {
     lastDataUpdate = millis();
     float oxygen = readOxygenSensor();
     float ec = readConductivitySensor();
@@ -65,3 +85,5 @@ void loop() {
     collectNewData(oxygen, ec, ph);
   }
 }
+
+
