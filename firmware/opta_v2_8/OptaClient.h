@@ -11,7 +11,7 @@ bool ntpSynced = false;
 bool initialEmailSent = false;
 
 unsigned long currentEpoch = 0;  // Store last synced time
-#define TIMEZONE_OFFSET 3600     // Adjust for 1-hour difference (in seconds)
+#define TIMEZONE_OFFSET 7200     // Adjust for 1-hour difference (in seconds)
 
 // Wi-Fi Configuration
 const int WIFI_TIMEOUT = 600000;
@@ -180,13 +180,15 @@ void checkFailure() {
 
 
 void collectNewData(float oxygen, float ec, float ph) {
-  allData[nextDataIndex] = getTimestamp() + " &emsp; Oxygen: " + String(oxygen) + " mg/L" + " &emsp; EC: " + String(ec) + " mS/cm" + " &emsp; pH: " + String(ph) + "<br>";
+  snprintf(allData[nextDataIndex], 128, "%s &emsp; Oxygen: %.2f mg/L &emsp; EC: %.2f mS/cm &emsp; pH: %.2f<br>",
+           getTimestamp().c_str(), oxygen, ec, ph);
   lastDataIndex = nextDataIndex;
   nextDataIndex++;
   if (nextDataIndex >= numberOfData) {
     nextDataIndex = 0;
   }
 }
+
 
 // Send Sensor Data Email
 void sendSensorDataEmail() {
@@ -195,6 +197,8 @@ void sendSensorDataEmail() {
   message.subject = "Sensor Data Report - ST1 - " + getTimestamp();
 #elif defined(ST2)
   message.subject = "Sensor Data Report - ST2 - " + getTimestamp();
+#elif defined(testing)
+  message.subject = "Sensor Data Report - TEST - " + getTimestamp();
 #elif defined(GR)
   message.subject = "Sensor Data Report - GREECE - " + getTimestamp();
 #else
@@ -202,10 +206,10 @@ void sendSensorDataEmail() {
 #endif
   message.message = "Sensor Readings:<br>";
   for (int i = nextDataIndex; i < numberOfData; i++) {
-    message.message += allData[i];
+    message.message += String(allData[i]);
   }
   for (int i = 0; i < nextDataIndex; i++) {
-    message.message += allData[i];
+    message.message += String(allData[i]);
   }
   message.message += "<br>Regards";
   EMailSender::Response resp = emailSend.send(RECEIVER_EMAIL, message);
@@ -218,9 +222,12 @@ void sendFirstSensorDataEmail(float oxygen, float ec, float ph) {
   message.subject = "Sensor Data Report - ST1 - " + getTimestamp();
 #elif defined(ST2)
   message.subject = "Sensor Data Report - ST2 - " + getTimestamp();
+#elif defined(testing)
+  message.subject = "Sensor Data Report - TEST - " + getTimestamp();
 #elif defined(GR)
   message.subject = "Sensor Data Report - GREECE - " + getTimestamp();
 #else
+
   message.subject = "Sensor Data Report - Unknown Station - " + getTimestamp();
 #endif
   message.message = "Sensor Readings:\n";
