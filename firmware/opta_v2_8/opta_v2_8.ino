@@ -61,10 +61,10 @@ void loop() {
   blinkLED(LED1, 1000);
 
   // Re-sincronizar NTP cada cierto intervalo. Comentado. Agregué la función solo después de enviar el correo.
-  /* if ((millis() - lastNTPUpdate) > ntpUpdateInterval) {
+  if ((millis() - lastNTPUpdate) > ntpUpdateInterval) {
     syncNTP_UDP();
     lastNTPUpdate = millis();
-  }*/
+  }
 
   // Print periódico por serial
   if ((millis() - last_print) > PRINT_DELAY) {
@@ -77,8 +77,6 @@ void loop() {
     sendSensorDataEmail();
     lastEmailSent = millis();
     Serial.println("Sensor data email sent.");
-    syncNTP_UDP();
-    lastNTPUpdate = millis();
   }
 
   // Recolección periódica de datos

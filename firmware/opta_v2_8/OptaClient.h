@@ -18,12 +18,9 @@ const int WIFI_TIMEOUT = 600000;
 const int WIFI_RECONNECT_INTERVAL = 5000;
 bool wifiConnected = false;
 unsigned long last_wifi_check = 0;
-bool ntpConnected = false;
-bool systemRunning = true;  // Estado del sistema
 
 // Email Configuration
 EMailSender emailSend(EMAIL_ADDRESS, EMAIL_PASSWORD);
-unsigned long lastErrorEmailDay = 99;
 
 // Función para hacer parpadear un LED rápidamente
 void blinkLED(int pin, int interval) {
@@ -71,7 +68,6 @@ void syncNTP_UDP() {
   currentEpoch = epoch;
 }
 
-
 // Connect to Wi-Fi
 void connectToWiFi() {
   Serial.println("Attempting to connect to WiFi...");
@@ -100,7 +96,6 @@ void connectToWiFi() {
     wifiConnected = false;
   }
 }
-
 
 // Check Wi-Fi Connection and Reconnect if Needed
 void checkWiFiConnection() {
@@ -133,14 +128,14 @@ void checkWiFiConnection() {
 }
 
 String getTimestamp() {
-  if (currentEpoch == 0) {  // If time hasn't been set yet, return placeholder
+  if (currentEpoch == 0) {  // Si no se ha establecido la hora, retornar placeholder
     return "00:00:00";
   }
 
-  unsigned long epoch = currentEpoch + (millis() / 1000);  // Adjust for uptime
-  unsigned long hours = (epoch % 86400L) / 3600;           // Get hours
-  unsigned long minutes = (epoch % 3600) / 60;             // Get minutes
-  unsigned long seconds = epoch % 60;                      // Get seconds
+  unsigned long epoch = currentEpoch;  // Usar la hora sincronizada tal cual
+  unsigned long hours = (epoch % 86400L) / 3600;           // Obtener horas
+  unsigned long minutes = (epoch % 3600) / 60;             // Obtener minutos
+  unsigned long seconds = epoch % 60;                      // Obtener segundos
 
   char timestamp[10];
   sprintf(timestamp, "%02lu:%02lu:%02lu", hours, minutes, seconds);
@@ -189,7 +184,6 @@ void collectNewData(float oxygen, float ec, float ph) {
   }
 }
 
-
 // Send Sensor Data Email
 void sendSensorDataEmail() {
   EMailSender::EMailMessage message;
@@ -197,7 +191,7 @@ void sendSensorDataEmail() {
   message.subject = "Sensor Data Report - ST1 - " + getTimestamp();
 #elif defined(ST2)
   message.subject = "Sensor Data Report - ST2 - " + getTimestamp();
-#elif defined(testing)
+#elif defined(TEST)
   message.subject = "Sensor Data Report - TEST - " + getTimestamp();
 #elif defined(GR)
   message.subject = "Sensor Data Report - GREECE - " + getTimestamp();
@@ -222,7 +216,7 @@ void sendFirstSensorDataEmail(float oxygen, float ec, float ph) {
   message.subject = "Sensor Data Report - ST1 - " + getTimestamp();
 #elif defined(ST2)
   message.subject = "Sensor Data Report - ST2 - " + getTimestamp();
-#elif defined(testing)
+#elif defined(TEST)
   message.subject = "Sensor Data Report - TEST - " + getTimestamp();
 #elif defined(GR)
   message.subject = "Sensor Data Report - GREECE - " + getTimestamp();
