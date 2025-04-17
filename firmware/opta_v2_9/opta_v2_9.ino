@@ -9,6 +9,7 @@ void setup() {
 
   Serial.begin(115200);
   Serial.println(STATION_NAME);
+  Serial.println(VERSION);
   pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
   pinMode(LED3, OUTPUT);
@@ -102,5 +103,5 @@ void loop() {
   }
 
   // Check for system failures
-  //checkFailure();
+  checkFailure();
 }

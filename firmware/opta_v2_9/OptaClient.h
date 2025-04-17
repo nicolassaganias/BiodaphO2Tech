@@ -192,7 +192,7 @@ void sendSensorDataEmail() {
 
   // Start constructing the email body
   message.message = "Sensor Readings:<br>";
-  
+
   // Add data from `allData` with proper formatting
   for (int i = nextDataIndex; i < numberOfData; i++) {
     message.message += String(allData[i]) + "<br>";  // Ensure each entry ends with a line break
@@ -230,4 +230,35 @@ void sendFirstSensorDataEmail(float oxygen, float ec, float ph) {
   message.message += "\nRegards";
   EMailSender::Response resp = emailSend.send(RECEIVER_EMAIL, message);
   //Serial.println(resp.status);
+}
+
+void checkFailure() {
+  static unsigned long lastCheck = 0;
+  static int wifiFailCount = 0;
+  const unsigned long CHECK_INTERVAL = 10000;  // Cada 10 segundos
+  const unsigned long EMAIL_TIMEOUT = EMAIL_INTERVAL * 3;
+
+  if (millis() - lastCheck < CHECK_INTERVAL) return;
+  lastCheck = millis();
+
+  // Si no se ha enviado mail en mucho tiempo, algo puede andar mal
+  if (millis() - lastEmailSent > EMAIL_TIMEOUT) {
+    Serial.println("❌ Email not sent for too long. Restarting...");
+    delay(2000);
+    NVIC_SystemReset();
+  }
+
+  // Si el WiFi sigue caído, contamos intentos fallidos
+  if (WiFi.status() != WL_CONNECTED) {
+    wifiFailCount++;
+    Serial.print("⚠️ WiFi fail count: ");
+    Serial.println(wifiFailCount);
+    if (wifiFailCount >= 10) {
+      Serial.println("❌ WiFi failed to reconnect after 10 attempts. Restarting...");
+      delay(5000);
+      NVIC_SystemReset();
+    }
+  } else {
+    wifiFailCount = 0;
+  }
 }

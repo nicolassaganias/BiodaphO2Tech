@@ -1,7 +1,7 @@
 //Variables. Here change parameters.
 // Configuration for time intervals (in milliseconds)
-const unsigned long EMAIL_INTERVAL = 1 /*hours*/ * 60 /*minutes*/ * 60 /*seconds*/ * 1000 /*milliseconds*/;  // Interval for sending emails - Set to 12 hours
-const unsigned long DATA_INTERVAL = 10 /*minutes*/ * 60 /*seconds*/ * 1000 /*milliseconds*/;                  // Interval for collecting sensor data - Set to 1 hour
+const unsigned long EMAIL_INTERVAL = 4 /*hours*/ * 60 /*minutes*/ * 60 /*seconds*/ * 1000 /*milliseconds*/;  // Interval for sending emails - Set to 12 hours
+const unsigned long DATA_INTERVAL = 60 /*minutes*/ * 60 /*seconds*/ * 1000 /*milliseconds*/;                  // Interval for collecting sensor data - Set to 1 hour
 const unsigned long ntpUpdateInterval = 6 * 60 * 60 * 1000;                                                   // NTP time synchronization interval - Set to 6 hours
 const unsigned long PRINT_DELAY = 10000;                                                                      // Delay for printing data to the serial monitor - Set to 10 seconds
 
@@ -10,7 +10,7 @@ const unsigned long PRINT_DELAY = 10000;                                        
 // #define ST2
 // #define GR
 #define TEST
-
+const char* VERSION = "Ver. 2.9";
 // Fixed code. Don't touch
 #define numberOfData ((EMAIL_INTERVAL / DATA_INTERVAL) + 1)  // Define the total number of data entries based on the ratio of EMAIL_INTERVAL to DATA_INTERVAL. This array will hold all collected data until an email is sent
 
@@ -65,7 +65,7 @@ const char* STATION_NAME = "GR";
 
 #elif defined(TEST)
 
-//#define testing
+#define testing
 #define WIFI_SSID "Can_Saguer_Wifi-2G-EXT"
 #define WIFI_PASSWORD "cansaguer2"
 #define RECEIVER_EMAIL "nicolassaganias@protonmail.com"
