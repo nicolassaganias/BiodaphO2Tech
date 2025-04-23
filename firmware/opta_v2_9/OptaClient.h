@@ -23,14 +23,18 @@ unsigned long last_wifi_check = 0;         // Stores the last time Wi-Fi was che
 EMailSender emailSend(EMAIL_ADDRESS, EMAIL_PASSWORD);  // Email sender instance
 
 String getTimestamp() {
-  if (currentEpoch == 0) {  // Si no se ha establecido la hora, retornar placeholder
+  if (currentEpoch == 0) {  // Si no hay hora válida todavía
     return "00:00:00";
   }
 
-  unsigned long epoch = currentEpoch;             // Usar la hora sincronizada tal cual
-  unsigned long hours = (epoch % 86400L) / 3600;  // Obtener horas
-  unsigned long minutes = (epoch % 3600) / 60;    // Obtener minutos
-  unsigned long seconds = epoch % 60;             // Obtener segundos
+  // Cuántos segundos pasaron desde la última sincronización NTP
+  unsigned long secondsPassed = (millis() - lastNTPUpdate) / 1000;
+
+  unsigned long nowEpoch = currentEpoch + secondsPassed;
+
+  unsigned long hours = (nowEpoch % 86400L) / 3600;
+  unsigned long minutes = (nowEpoch % 3600) / 60;
+  unsigned long seconds = nowEpoch % 60;
 
   char timestamp[10];
   sprintf(timestamp, "%02lu:%02lu:%02lu", hours, minutes, seconds);
@@ -87,12 +91,12 @@ bool syncNTP_UDP() {
   unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
   unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
   unsigned long epoch = (highWord << 16 | lowWord) - 2208988800UL;  // Convert to Unix time
-  epoch += TIMEZONE_OFFSET;                                         // Adjust for the desired timezone
+  epoch += TIMEZONE_OFFSET;  // Adjust for the desired timezone
 
   if (epoch > 100000) {  // Validate the epoch timestamp
-    currentEpoch = epoch;
+    currentEpoch = epoch;          // Set the new epoch received
+    lastNTPUpdate = millis();      // Set the millis() at the exact moment of sync
     ntpSynced = true;
-    lastNTPUpdate = millis();
     Serial.println("✅ NTP successfully synchronized.");
     return true;
   } else {  // If the timestamp is invalid, mark synchronization as failed
@@ -101,6 +105,7 @@ bool syncNTP_UDP() {
     return false;
   }
 }
+
 
 // Connect to Wi-Fi network using credentials
 void connectToWiFi() {
@@ -183,7 +188,7 @@ void sendSensorDataEmail() {
 #elif defined(ST2)
   message.subject = "Sensor Data Report - ST2 - " + getTimestamp();
 #elif defined(TEST)
-  message.subject = "Sensor Data Report - TEST - " + getTimestamp();
+  message.subject = "Sensor Data Report - TESTing - " + getTimestamp();
 #elif defined(GR)
   message.subject = "Sensor Data Report - GREECE - " + getTimestamp();
 #else
