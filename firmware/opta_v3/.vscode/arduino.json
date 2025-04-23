@@ -1,6 +1,0 @@
-{
-    "configuration": "target_core=cm7,split=100_0,security=none",
-    "board": "arduino:mbed_opta:opta",
-    "port": "COM5",
-    "sketch": "opta_v2_9.ino"
-}
