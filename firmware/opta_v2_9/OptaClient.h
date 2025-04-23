@@ -106,7 +106,6 @@ bool syncNTP_UDP() {
   }
 }
 
-
 // Connect to Wi-Fi network using credentials
 void connectToWiFi() {
   Serial.println("Attempting to connect to WiFi...");
