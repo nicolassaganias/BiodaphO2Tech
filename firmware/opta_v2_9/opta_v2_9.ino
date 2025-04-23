@@ -67,7 +67,7 @@ void loop() {
   blinkLED(LED1, 1000);
 
   // Re-sync NTP at regular intervals
-  if ((millis() - lastNTPUpdate) > ntpUpdateInterval && ntpSynced) {
+  /*if ((millis() - lastNTPUpdate) > ntpUpdateInterval && ntpSynced) {
     Serial.println("⌛ Attempting NTP re-sync...");
     syncNTP_UDP();
 
@@ -78,7 +78,7 @@ void loop() {
       Serial.println("❌ NTP re-sync failed.");
       ntpSynced = false;  // Mark as unsynced
     }
-  }
+  }*/
 
   // Periodic print to serial
   if ((millis() - last_print) > PRINT_DELAY) {
