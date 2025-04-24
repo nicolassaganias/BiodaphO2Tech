@@ -220,7 +220,7 @@ void sendFirstSensorDataEmail(float oxygen, float ec, float ph) {
 #elif defined(ST2)
   message.subject = "Sensor Data Report - ST2 - " + getTimestamp();
 #elif defined(TEST)
-  message.subject = "Sensor Data Report - TEST - " + getTimestamp();
+  message.subject = "Sensor Data Report - TESTing - " + getTimestamp();
 #elif defined(GR)
   message.subject = "Sensor Data Report - GREECE - " + getTimestamp();
 #else

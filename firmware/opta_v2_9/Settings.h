@@ -1,6 +1,6 @@
 //Variables. Here change parameters.
 // Configuration for time intervals (in milliseconds)
-const unsigned long EMAIL_INTERVAL = 24 /*hours*/ * 60 /*minutes*/ * 60 /*seconds*/ * 1000 /*milliseconds*/;  // Interval for sending emails - Set to 12 hours
+const unsigned long EMAIL_INTERVAL = 8 /*hours*/ * 60 /*minutes*/ * 60 /*seconds*/ * 1000 /*milliseconds*/;  // Interval for sending emails - Set to 12 hours
 const unsigned long DATA_INTERVAL = 60 /*minutes*/ * 60 /*seconds*/ * 1000 /*milliseconds*/;                  // Interval for collecting sensor data - Set to 1 hour
 const unsigned long ntpUpdateInterval = 6 * 60 * 60 * 1000;                                                   // NTP time synchronization interval - Set to 6 hours
 const unsigned long PRINT_DELAY = 10000;                                                                      // Delay for printing data to the serial monitor - Set to 10 seconds
