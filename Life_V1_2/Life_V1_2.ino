@@ -218,7 +218,7 @@ void loop() {
       delay(30);
 
       // Señales de tensión, escaladas a mano con rangos específicos
-      lec_TSS_MLSS = analogRead(A5) * ((4000.0 - 0.0) / 65535.0) + 0.0;  // Turbidímetro con módulo adaptador 0..10v
+      lec_TSS_MLSS = analogRead(A5) * ((4000.0 - 0.0) / 65535.0) + 0.0;  // Turbidímetro con módulo adaptador 0..10v OJO QUIZAS HAY QUE HACER / 10
       publish(RES_TSS_MLSS, lec_TSS_MLSS, PubWrite);
       delay(30);
 
