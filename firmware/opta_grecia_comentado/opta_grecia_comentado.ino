@@ -74,11 +74,19 @@ void setup() {
 
 /* -------------------------------------------------------------------------- */
 float lecturaAnalog(uint8_t pin) {
+  float a = analogRead(pin) * 10.0 / 65535.0;
+  float b = analogRead(pin);
+  Serial.print("analog:");
+  Serial.println(a);
+  Serial.print("analog raw:");
+  Serial.println(b);
+ 
   // Lectura directa de entradas analógicas del Opta, mapeadas de 0..65535 a corriente 4..20mA
-  return analogRead(pin) * ((4000.0 - 0.0) / 65535.0) + 0.0;  // Con módulo adaptador 0..10v OJO QUIZAS HAY QUE HACER / 10
-  //return analogRead(pin) * (20.0 - 4.0) / 65535.0 + 4.0; // Para señales 4-20ma
-}
+  //return analogRead(pin) * (20.0 - 4.0) / 65535.0 + 4.0;  // Para señales 4-20ma
 
+  // Lectura con módulo adaptador 0..10v
+  return analogRead(pin) * 10.0 / 65535.0;
+}
 /* -------------------------------------------------------------------------- */
 /*                                  LOOP                                      */
 /* -------------------------------------------------------------------------- */
@@ -112,7 +120,7 @@ void loop() {
       // publish(RES_AS_DO1, lec_AS_DO1, PubWrite);
       // delay(30);
 
-      lec_AS_PH1 = escalarValores(lecturaAnalog(A0),0.0, 10.0, 0.0, 14.0);
+      lec_AS_PH1 = escalarValores(lecturaAnalog(A0), 0.0, 10.0, 0.0, 14.0);
       if (!isnan(lec_AS_PH1)) {
         publish(RES_AS_PH1, lec_AS_PH1, PubWrite);
         Serial.print("PH Atlas Scientific 1: ");
@@ -127,6 +135,7 @@ void loop() {
         Serial.print("EC Atlas Scientific 1: ");
         Serial.print(lec_AS_EC1, 2);
         Serial.println(" mS/cm");
+        Serial.println("");
       }
       delay(30);
 
@@ -135,7 +144,6 @@ void loop() {
         PubWrite = false;
         cnt = 0;
       }
-
       digitalWrite(LED_D0, LOW);
     }
     client.loop();  // Esto es re importante para mantener el ping MQTT activo
