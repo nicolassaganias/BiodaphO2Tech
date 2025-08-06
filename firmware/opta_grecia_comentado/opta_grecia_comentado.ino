@@ -75,7 +75,8 @@ void setup() {
 /* -------------------------------------------------------------------------- */
 float lecturaAnalog(uint8_t pin) {
   // Lectura directa de entradas analógicas del Opta, mapeadas de 0..65535 a corriente 4..20mA
-  return analogRead(pin) * (20.0 - 4.0) / 65535.0 + 4.0;
+  return analogRead(pin) * ((4000.0 - 0.0) / 65535.0) + 0.0;  // Con módulo adaptador 0..10v OJO QUIZAS HAY QUE HACER / 10
+  //return analogRead(pin) * (20.0 - 4.0) / 65535.0 + 4.0; // Para señales 4-20ma
 }
 
 /* -------------------------------------------------------------------------- */
@@ -111,7 +112,7 @@ void loop() {
       // publish(RES_AS_DO1, lec_AS_DO1, PubWrite);
       // delay(30);
 
-      lec_AS_PH1 = escalarValores(lecturaAnalog(A0), 4.0, 20.0, 0.0, 14.0);
+      lec_AS_PH1 = escalarValores(lecturaAnalog(A0),0.0, 10.0, 0.0, 14.0);
       if (!isnan(lec_AS_PH1)) {
         publish(RES_AS_PH1, lec_AS_PH1, PubWrite);
         Serial.print("PH Atlas Scientific 1: ");
@@ -120,7 +121,7 @@ void loop() {
       }
       delay(30);
 
-      lec_AS_EC1 = escalarValores(lecturaAnalog(A1), 4.0, 20.0, 0.0, 25000.0);
+      lec_AS_EC1 = escalarValores(lecturaAnalog(A1), 0.0, 10.0, 0.0, 25000.0);
       if (!isnan(lec_AS_EC1)) {
         publish(RES_AS_EC1, lec_AS_EC1, PubWrite);
         Serial.print("EC Atlas Scientific 1: ");
