@@ -178,7 +178,7 @@ void publish(const char* resource, float data, bool persist) {
 
   char topic[64];
   sprintf(topic, "%s/%s", Channel, resource);  // El topic tiene que ser así para Beebotte
-
+  Serial.println("Publicado en",resource,"los datos",data);
   client.publish(topic, buffer);  // Envío el JSON por MQTT
 }
 
