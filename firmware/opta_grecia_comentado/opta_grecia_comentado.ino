@@ -11,12 +11,13 @@
 #define RES_AS_DO1 "AS_DO1_GR"
 #define RES_AS_PH1 "AS_PH1_GR"
 #define RES_AS_EC1 "AS_EC1_GR"
+#define RES_ALL_READINGS "All_readings"
 
 #define Write true  // esto indica si se guarda el dato en el canal (persistencia)
 #define Publ false
 
 int status = WL_IDLE_STATUS;
-float lec_AS_DO1, lec_AS_PH1, lec_AS_EC1;
+float lec_AS_DO1_GR, lec_AS_PH1_GR, lec_AS_EC1_GR;
 
 // const char* ssid = "Outdoor-WiFi-255BC6";  // Cambiar por el nombre de tu red
 // const char* password = "oT0,2LiM-WlZ";     // Y obviamente la clave del WiFi
@@ -80,7 +81,7 @@ float lecturaAnalog(uint8_t pin) {
   Serial.println(a);
   Serial.print("analog raw:");
   Serial.println(b);
- 
+
   // Lectura directa de entradas analógicas del Opta, mapeadas de 0..65535 a corriente 4..20mA
   //return analogRead(pin) * (20.0 - 4.0) / 65535.0 + 4.0;  // Para señales 4-20ma
 
@@ -116,28 +117,33 @@ void loop() {
       digitalWrite(LED_D0, HIGH);
 
       // Señales de corriente (4-20 mA), escaladas con escalarValores()
-      // lec_AS_DO1 = escalarValores(lecturaAnalog(A0), 4.0, 20.0, 0.0, 32.0);
-      // publish(RES_AS_DO1, lec_AS_DO1, PubWrite);
+      // lec_AS_DO1_GR = escalarValores(lecturaAnalog(A0), 4.0, 20.0, 0.0, 32.0);
+      // publish(RES_AS_DO1, lec_AS_DO1_GR, PubWrite);
       // delay(30);
 
-      lec_AS_PH1 = escalarValores(lecturaAnalog(A0), 0.0, 10.0, 0.0, 14.0);
-      if (!isnan(lec_AS_PH1)) {
-        publish(RES_AS_PH1, lec_AS_PH1, PubWrite);
+      lec_AS_PH1_GR = escalarValores(lecturaAnalog(A0), 0.0, 10.0, 0.0, 14.0);
+      if (!isnan(lec_AS_PH1_GR)) {
+        publish(RES_AS_PH1, lec_AS_PH1_GR, PubWrite);
         Serial.print("PH Atlas Scientific 1: ");
-        Serial.print(lec_AS_PH1, 2);
+        Serial.print(lec_AS_PH1_GR, 2);
         Serial.println("");
       }
       delay(30);
 
-      lec_AS_EC1 = escalarValores(lecturaAnalog(A1), 0.0, 10.0, 0.0, 25000.0);
-      if (!isnan(lec_AS_EC1)) {
-        publish(RES_AS_EC1, lec_AS_EC1, PubWrite);
+      lec_AS_EC1_GR_GR = escalarValores(lecturaAnalog(A1), 0.0, 10.0, 0.0, 25000.0);
+      if (!isnan(lec_AS_EC1_GR)) {
+        publish(RES_AS_EC1, lec_AS_EC1_GR, PubWrite);
         Serial.print("EC Atlas Scientific 1: ");
-        Serial.print(lec_AS_EC1, 2);
+        Serial.print(lec_AS_EC1_GR, 2);
         Serial.println(" mS/cm");
         Serial.println("");
       }
       delay(30);
+
+      // Armar string separado por comas
+      String all_readings = String(lec_AS_DO1_GR, 1) + "," + String(lec_AS_PH1_GR, 1) + "," + String(lec_AS_EC1_GR, 1)+ ",";
+
+      publish(RES_ALL_READINGS, all_readings, false);       // Publicar string completo
 
       cnt++;
       if (cnt > pub) {
