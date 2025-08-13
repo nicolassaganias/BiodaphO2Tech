@@ -28,7 +28,7 @@ WiFiClient wifiClient;
 PubSubClient client(wifiClient);  // Se usa este cliente como transporte para MQTT
 
 long lastReconnectAttempt = 0;
-const long interval = 10000;  // cada cuanto guarda datos en el .csv
+const long interval = 60000;  // cada cuanto guarda datos en el .csv
 const long intervalPrint = 5000;
 
 unsigned long lastReadingMillis, lastPrintMillis = 0;
@@ -37,7 +37,7 @@ const char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456
 char id[17];
 
 int cnt = 0;            // Contador para hacer una escritura por cada x publicaciones
-int pub = 3;            //Cada cuantas publicaciones se hace una escritura presistente para el dashboard
+int pub = 10;            //Cada cuantas publicaciones se hace una escritura presistente para el dashboard
 bool PubWrite = false;  // True = persistente, false = publicado sin persistencia
 
 #define PERIODIC_UPDATE_TIME 500
@@ -77,19 +77,16 @@ void setup() {
 float lecturaAnalog(uint8_t pin) {
   float a = analogRead(pin) * 10.0 / 65535.0;
   float b = analogRead(pin);
-<<<<<<< HEAD
-  Serial.print("analog:");
-  Serial.println(a);
-  Serial.print("analog raw:");
+  Serial.print("analog map:");
+  Serial.print(a);
+  Serial.print("   analog raw:");
   Serial.println(b);
 
-=======
   //Serial.print("analog:");
   //Serial.println(a);
   //Serial.print("analog raw:");
   //Serial.println(b);
- 
->>>>>>> 3e1d877bf8d7d126ef5f8245fa0e73453186d890
+
   // Lectura directa de entradas analógicas del Opta, mapeadas de 0..65535 a corriente 4..20mA
   //return analogRead(pin) * (20.0 - 4.0) / 65535.0 + 4.0;  // Para señales 4-20ma
 
@@ -130,7 +127,7 @@ void loop() {
       // publish(RES_AS_DO1, lec_AS_DO1_GR, PubWrite);
       // delay(30);
 
-      lec_AS_PH1_GR = escalarValores(lecturaAnalog(A0), 0.0, 10.0, 0.0, 14.0);
+      lec_AS_PH1_GR = escalarValores(lecturaAnalog(A0), 0.0, 9.3, 0.0, 14.0);
       if (!isnan(lec_AS_PH1_GR)) {
         publish(RES_AS_PH1, lec_AS_PH1_GR, PubWrite);
         Serial.print("PH Atlas Scientific 1: ");
@@ -139,7 +136,7 @@ void loop() {
       }
       delay(30);
 
-      lec_AS_EC1_GR_GR = escalarValores(lecturaAnalog(A1), 0.0, 10.0, 0.0, 25000.0);
+      lec_AS_EC1_GR = escalarValores(lecturaAnalog(A1), 0.0, 9.3, 0.0, 25000.0);
       if (!isnan(lec_AS_EC1_GR)) {
         publish(RES_AS_EC1, lec_AS_EC1_GR, PubWrite);
         Serial.print("EC Atlas Scientific 1: ");
@@ -150,11 +147,12 @@ void loop() {
       delay(30);
 
       // Armar string separado por comas
-      String all_readings = String(lec_AS_DO1_GR, 1) + "," + String(lec_AS_PH1_GR, 1) + "," + String(lec_AS_EC1_GR, 1)+ ",";
-
-      publish(RES_ALL_READINGS, all_readings, false);       // Publicar string completo
-
+      String all_readings = String(lec_AS_PH1_GR, 1) + "," + String(lec_AS_EC1_GR, 1);
+      publish(RES_ALL_READINGS, all_readings, false);  // Publicar string completo
+      Serial.print("All:");
+      Serial.println(all_readings);
       cnt++;
+
       if (cnt > pub) {
         PubWrite = false;
         cnt = 0;
@@ -199,11 +197,11 @@ void publish(const char* resource, float data, bool persist) {
   Serial.print("Publicados en ");
   Serial.print(String(resource));
   Serial.print(" los datos ");
-  Serial.print(String(data,1));
+  Serial.print(String(data, 1));
   Serial.print(" con persistencia ");
-  if (persist){
+  if (persist) {
     Serial.println(" True");
-  } else{
+  } else {
     Serial.println(" False");
   }
   Serial.println("-------");
