@@ -127,7 +127,7 @@ void loop() {
       // publish(RES_AS_DO1, lec_AS_DO1_GR, PubWrite);
       // delay(30);
 
-      lec_AS_PH1_GR = escalarValores(lecturaAnalog(A0), 0.0, 9.3, 0.0, 14.0);
+      lec_AS_PH1_GR = escalarValores(lecturaAnalog(A0), 0.0, 10.0, 0.0, 14.0);
       if (!isnan(lec_AS_PH1_GR)) {
         publish(RES_AS_PH1, lec_AS_PH1_GR, PubWrite);
         Serial.print("PH Atlas Scientific 1: ");
