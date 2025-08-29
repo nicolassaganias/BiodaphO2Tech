@@ -33,8 +33,8 @@ PubSubClient client(wifiClient);
 
 // Tiempos
 long lastReconnectAttempt = 0;
-const long interval = 60000;        // cada cuanto guarda/publica datos (1 min)
-const long intervalPrint = 2000;    // cada cuanto hace prints (5 s) -> cambiar a 1000 si querés 1 s
+const long interval = 600000;        // cada cuanto guarda/publica datos (5 min)
+const long intervalPrint = 5000;    // cada cuanto hace prints (5 s) -> cambiar a 1000 si querés 1 s
 
 unsigned long lastReadingMillis = 0;
 unsigned long lastPrintMillis = 0;
@@ -197,11 +197,50 @@ bool reconnect() {
   if (client.connect(generateID(), TOKEN, "")) {
     Serial.println("Conectado a Beebotte MQTT");
     digitalWrite(LED_USER, HIGH);
-    delay(100);
+    delay(200);
+
+    // ======== LECTURA INICIAL ========
+    Serial.println("Enviando lectura inicial a Beebotte...");
+    digitalWrite(LED_D0, HIGH);
+
+    lec_AS_PH1_GR = escalarValores(lecturaAnalog(PH_PIN), 0.0, 10.0, 0.0, 14.0);
+    lec_AS_EC1_GR = escalarValores(lecturaAnalog(EC_PIN), 0.0, 9.3, 0.0, 25000.0);
+
+    // Publicar PH
+    if (!isnan(lec_AS_PH1_GR)) {
+      publish(RES_AS_PH1, lec_AS_PH1_GR, false);
+      Serial.print("PH inicial: ");
+      Serial.println(lec_AS_PH1_GR, 2);
+    }
+
+    delay(50);
+
+    // Publicar EC
+    if (!isnan(lec_AS_EC1_GR)) {
+      publish(RES_AS_EC1, lec_AS_EC1_GR, false);
+      Serial.print("EC inicial: ");
+      Serial.print(lec_AS_EC1_GR, 2);
+      Serial.println(" mS/cm");
+    }
+
+    delay(50);
+
+    // Publicar lectura combinada
+    String all_readings = String(lec_AS_PH1_GR, 1) + "," + String(lec_AS_EC1_GR, 1);
+    publish(RES_ALL_READINGS, all_readings, false);
+
+    Serial.print("All inicial: ");
+    Serial.println(all_readings);
+    Serial.println("Lectura inicial enviada correctamente");
+    Serial.println("-------------------------------");
+
+    digitalWrite(LED_D0, LOW);
+
     return client.connected();
   }
   return false;
 }
+
 
 float escalarValores(float valor, float min_ing, float max_ing, float min, float max) {
   // map para float
