@@ -7,38 +7,50 @@
 #define TOKEN "token:token_5iHgg9PJs6OoYQM6"
 #define Channel "OptaAntisa"
 
-// Recursos usados - canales (pueden renombrarse si querés que no se mezclen con los de la otra caja)
+// Recursos usados - canales
 #define RES_AS_DO1 "AS_DO1_GR"
 #define RES_AS_PH1 "AS_PH1_GR"
 #define RES_AS_EC1 "AS_EC1_GR"
 #define RES_ALL_READINGS "All_readings"
 
-#define Write true  // esto indica si se guarda el dato en el canal (persistencia)
+#define Write true
 #define Publ false
+
+// === Intercambio de pines: ahora pH en A1 y EC en A0 ===
+#define PH_PIN A1
+#define EC_PIN A0
 
 int status = WL_IDLE_STATUS;
 float lec_AS_DO1_GR, lec_AS_PH1_GR, lec_AS_EC1_GR;
 
-// const char* ssid = "Outdoor-WiFi-255BC6";  // Cambiar por el nombre de tu red
-// const char* password = "oT0,2LiM-WlZ";     // Y obviamente la clave del WiFi
-const char* ssid = "Post 2.4";  // Cambiar por el nombre de tu red
-const char* password = "28742241";   // Y obviamente la clave del WiFi
+// const char* ssid = "Outdoor-WiFi-255BC6";
+// const char* password = "oT0,2LiM-WlZ";
+const char* ssid = "Can_Saguer_Wifi";
+const char* password = "cansaguer2";
 
 WiFiClient wifiClient;
-PubSubClient client(wifiClient);  // Se usa este cliente como transporte para MQTT
+PubSubClient client(wifiClient);
 
+// Tiempos
 long lastReconnectAttempt = 0;
-const long interval = 60000;  // cada cuanto guarda datos en el .csv
-const long intervalPrint = 5000;
+const long interval = 600000;        // cada cuanto guarda/publica datos (5 min)
+const long intervalPrint = 5000;    // cada cuanto hace prints (5 s) -> cambiar a 1000 si querés 1 s
 
-unsigned long lastReadingMillis, lastPrintMillis = 0;
+unsigned long lastReadingMillis = 0;
+unsigned long lastPrintMillis = 0;
 
-const char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";  // Para generar ID random medio casero
+// Para ID MQTT
+const char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 char id[17];
 
+// Control de persistencia
 int cnt = 0;            // Contador para hacer una escritura por cada x publicaciones
-int pub = 10;            //Cada cuantas publicaciones se hace una escritura presistente para el dashboard
-bool PubWrite = false;  // True = persistente, false = publicado sin persistencia
+int pub = 10;           // Cada cuantas publicaciones se hace una escritura persistente
+bool PubWrite = false;  // True = persistente, false = sin persistencia
+
+// RAWs (ADC 16 bits)
+uint16_t raw_A0 = 0;
+uint16_t raw_A1 = 0;
 
 #define PERIODIC_UPDATE_TIME 500
 #define DELAY_AFTER_SETUP 5000
@@ -53,51 +65,47 @@ void setup() {
   pinMode(LED_USER, OUTPUT);
   digitalWrite(LED_D0, LOW);
   digitalWrite(LED_USER, LOW);
+
   // CANALES ANALOGICOS
-  analogReadResolution(16);  // Configuración de resolución de lectura analógica 16 bits (0..65535)
+  analogReadResolution(16);  // 0..65535
 
   // WiFi
   Serial.println("Conectando a WiFi");
   while (status != WL_CONNECTED) {
     Serial.println("Intentando conectar al SSID existente: ");
     Serial.println(ssid);
-    // Connect to WPA/WPA2 network:
     status = WiFi.begin(ssid, password);
-    // wait 10 seconds for connection:
     delay(10000);
   }
   Serial.println("\nWiFi conectado, IP: ");
   Serial.println(WiFi.localIP());
 
-  client.setServer(BBT, 1883);  // Usamos MQTT sin TLS (puerto 1883), Beebotte lo permite
+  client.setServer(BBT, 1883);  // MQTT sin TLS
   lastReconnectAttempt = 0;
 }
 
 /* -------------------------------------------------------------------------- */
+// Lee 1 vez, guarda RAW según pin y devuelve mapeo 0..10V.
+// Mantengo los prints de debug "analog map" y "analog raw" como tenías.
 float lecturaAnalog(uint8_t pin) {
-  float a = analogRead(pin) * 10.0 / 65535.0;
-  float b = analogRead(pin);
+  uint16_t raw = analogRead(pin);              // valor crudo 0..65535
+  float mapped = raw * 10.0 / 65535.0;         // 0..10V con módulo 0-10V
+
+  if (pin == A0) raw_A0 = raw;
+  if (pin == A1) raw_A1 = raw;
+
   Serial.print("analog map:");
-  Serial.print(a);
+  Serial.print(mapped);
   Serial.print("   analog raw:");
-  Serial.println(b);
+  Serial.println(raw);
 
-  //Serial.print("analog:");
-  //Serial.println(a);
-  //Serial.print("analog raw:");
-  //Serial.println(b);
-
-  // Lectura directa de entradas analógicas del Opta, mapeadas de 0..65535 a corriente 4..20mA
-  //return analogRead(pin) * (20.0 - 4.0) / 65535.0 + 4.0;  // Para señales 4-20ma
-
-  // Lectura con módulo adaptador 0..10v
-  return analogRead(pin) * 10.0 / 65535.0;
+  return mapped;
 }
+
 /* -------------------------------------------------------------------------- */
 /*                                  LOOP                                      */
 /* -------------------------------------------------------------------------- */
 void loop() {
-
   if (!client.connected()) {
     Serial.println("DESCONEXION");
     long now = millis();
@@ -109,25 +117,20 @@ void loop() {
       }
     }
   } else {
-    // Si estamos conectados, controlamos si ya pasaron los 60 segundos para leer de nuevo
     unsigned long currentMillis = millis();
-    unsigned long currentMillisPrint = millis();
 
+    // ---- PUBLICACIÓN A BEEBOTTE CADA 1 MINUTO ----
     if (currentMillis - lastReadingMillis >= interval) {
       lastReadingMillis = currentMillis;
       if (cnt == pub) {
         PubWrite = true;
       }
 
-      // Iniciamos lectura de sensores
+      // Iniciamos lectura de sensores y publicamos
       digitalWrite(LED_D0, HIGH);
 
-      // Señales de corriente (4-20 mA), escaladas con escalarValores()
-      // lec_AS_DO1_GR = escalarValores(lecturaAnalog(A0), 4.0, 20.0, 0.0, 32.0);
-      // publish(RES_AS_DO1, lec_AS_DO1_GR, PubWrite);
-      // delay(30);
-
-      lec_AS_PH1_GR = escalarValores(lecturaAnalog(A0), 0.0, 10.0, 0.0, 14.0);
+      // PH ahora en PH_PIN (A1)
+      lec_AS_PH1_GR = escalarValores(lecturaAnalog(PH_PIN), 0.0, 10.0, 0.0, 14.0);
       if (!isnan(lec_AS_PH1_GR)) {
         publish(RES_AS_PH1, lec_AS_PH1_GR, PubWrite);
         Serial.print("PH Atlas Scientific 1: ");
@@ -136,7 +139,8 @@ void loop() {
       }
       delay(30);
 
-      lec_AS_EC1_GR = escalarValores(lecturaAnalog(A1), 0.0, 9.3, 0.0, 25000.0);
+      // EC ahora en EC_PIN (A0)
+      lec_AS_EC1_GR = escalarValores(lecturaAnalog(EC_PIN), 0.0, 9.3, 0.0, 25000.0);
       if (!isnan(lec_AS_EC1_GR)) {
         publish(RES_AS_EC1, lec_AS_EC1_GR, PubWrite);
         Serial.print("EC Atlas Scientific 1: ");
@@ -159,58 +163,91 @@ void loop() {
       }
       digitalWrite(LED_D0, LOW);
     }
-    client.loop();  // Esto es re importante para mantener el ping MQTT activo
+
+    // ---- PRINT INDEPENDIENTE CADA 5 SEGUNDOS (LECTURA FRESCA + RAW) ----
+    if (currentMillis - lastPrintMillis >= intervalPrint) {
+      lastPrintMillis = currentMillis;
+
+      // Re-lectura rápida solo para mostrar por Serial (no publica)
+      float phTemp = escalarValores(lecturaAnalog(PH_PIN), 0.0, 9.75, 0.0, 14.0);
+      float ecTemp = escalarValores(lecturaAnalog(EC_PIN), 0.0, 9.3, 0.0, 25000.0);
+
+      Serial.println("----- Print periódico -----");
+      Serial.print("PH Atlas Scientific 1: ");
+      Serial.print(phTemp, 2);
+      Serial.print("   (raw ");
+      Serial.print((PH_PIN == A1) ? raw_A1 : raw_A0);
+      Serial.println(")");
+
+      Serial.print("EC Atlas Scientific 1: ");
+      Serial.print(ecTemp, 2);
+      Serial.print(" mS/cm   (raw ");
+      Serial.print((EC_PIN == A0) ? raw_A0 : raw_A1);
+      Serial.println(")");
+      Serial.println("---------------------------");
+    }
+
+    client.loop();  // Mantiene el ping MQTT activo
   }
 }
 
+/* -------------------------------------------------------------------------- */
 bool reconnect() {
   // Intento de conexión con ID dinámico y usando solo el token como auth
   if (client.connect(generateID(), TOKEN, "")) {
     Serial.println("Conectado a Beebotte MQTT");
     digitalWrite(LED_USER, HIGH);
-    delay(100);
+    delay(200);
+
+    // ======== LECTURA INICIAL ========
+    Serial.println("Enviando lectura inicial a Beebotte...");
+    digitalWrite(LED_D0, HIGH);
+
+    lec_AS_PH1_GR = escalarValores(lecturaAnalog(PH_PIN), 0.0, 10.0, 0.0, 14.0);
+    lec_AS_EC1_GR = escalarValores(lecturaAnalog(EC_PIN), 0.0, 9.3, 0.0, 25000.0);
+
+    // Publicar PH
+    if (!isnan(lec_AS_PH1_GR)) {
+      publish(RES_AS_PH1, lec_AS_PH1_GR, false);
+      Serial.print("PH inicial: ");
+      Serial.println(lec_AS_PH1_GR, 2);
+    }
+
+    delay(50);
+
+    // Publicar EC
+    if (!isnan(lec_AS_EC1_GR)) {
+      publish(RES_AS_EC1, lec_AS_EC1_GR, false);
+      Serial.print("EC inicial: ");
+      Serial.print(lec_AS_EC1_GR, 2);
+      Serial.println(" mS/cm");
+    }
+
+    delay(50);
+
+    // Publicar lectura combinada
+    String all_readings = String(lec_AS_PH1_GR, 1) + "," + String(lec_AS_EC1_GR, 1);
+    publish(RES_ALL_READINGS, all_readings, false);
+
+    Serial.print("All inicial: ");
+    Serial.println(all_readings);
+    Serial.println("Lectura inicial enviada correctamente");
+    Serial.println("-------------------------------");
+
+    digitalWrite(LED_D0, LOW);
+
     return client.connected();
   }
   return false;
 }
 
+
 float escalarValores(float valor, float min_ing, float max_ing, float min, float max) {
-  // Lo hacemos así por que map solo funciona con long
+  // map para float
   return (valor - min_ing) * (max - min) / (max_ing - min_ing) + min;
 }
 
 void publish(const char* resource, float data, bool persist) {
-  // Acá armamos el JSON que Beebotte espera. Versión vieja de ArduinoJson = sintaxis rara.
-  StaticJsonBuffer<128> jsonOutBuffer;
-  JsonObject& root = jsonOutBuffer.createObject();
-  root["channel"] = Channel;
-  root["resource"] = resource;
-  if (persist) root["write"] = true;
-  root["data"] = data;
-
-  char buffer[128];
-  root.printTo(buffer, sizeof(buffer));  // Lo serializo a un buffer de texto plano
-
-  char topic[64];
-  sprintf(topic, "%s/%s", Channel, resource);  // El topic tiene que ser así para Beebotte
-  Serial.println("-------");
-  Serial.print("Publicados en ");
-  Serial.print(String(resource));
-  Serial.print(" los datos ");
-  Serial.print(String(data, 1));
-  Serial.print(" con persistencia ");
-  if (persist) {
-    Serial.println(" True");
-  } else {
-    Serial.println(" False");
-  }
-  Serial.println("-------");
-  client.publish(topic, buffer);  // Envío el JSON por MQTT
-}
-
-// Sobrecarga de función, por que la porquería no toma el String para la combinación de todos los canales
-// El compilador toma la que corresponda, con data float o data string
-void publish(const char* resource, String data, bool persist) {
   // JSON para Beebotte (ArduinoJson versión vieja)
   StaticJsonBuffer<128> jsonOutBuffer;
   JsonObject& root = jsonOutBuffer.createObject();
@@ -225,12 +262,42 @@ void publish(const char* resource, String data, bool persist) {
   char topic[64];
   sprintf(topic, "%s/%s", Channel, resource);  // Topic para Beebotte
 
+  Serial.println("-------");
+  Serial.print("Publicados en ");
+  Serial.print(String(resource));
+  Serial.print(" los datos ");
+  Serial.print(String(data, 1));
+  Serial.print(" con persistencia ");
+  if (persist) {
+    Serial.println(" True");
+  } else {
+    Serial.println(" False");
+  }
+  Serial.println("-------");
+
   client.publish(topic, buffer);  // Publicar por MQTT
 }
 
-const char* generateID() {
-  randomSeed(micros());  // Mejor que analogRead(0), pero sigue siendo pseudoaleatorio
+// Sobrecarga para enviar String (All_readings)
+void publish(const char* resource, String data, bool persist) {
+  StaticJsonBuffer<128> jsonOutBuffer;
+  JsonObject& root = jsonOutBuffer.createObject();
+  root["channel"] = Channel;
+  root["resource"] = resource;
+  if (persist) root["write"] = true;
+  root["data"] = data;
 
+  char buffer[128];
+  root.printTo(buffer, sizeof(buffer));
+
+  char topic[64];
+  sprintf(topic, "%s/%s", Channel, resource);
+
+  client.publish(topic, buffer);
+}
+
+const char* generateID() {
+  randomSeed(micros());  // mejor que analogRead(0)
   for (int i = 0; i < sizeof(id) - 1; i++) {
     id[i] = chars[random(sizeof(chars) - 1)];
   }
