@@ -16,8 +16,8 @@ The system operates autonomously using an **Arduino Opta Wi-Fi PLC** with an **a
 - 2 × **Pool Modules**  
   Each pool has:
   - 1 × pH Sensor (Atlas Scientific Industrial)  
-  - 1 × Conductivity Sensor (EC)  
-  - 1 × Dissolved Oxygen Sensor (DO)  
+  - 1 × Conductivity Sensor (Atlas Scientific Industrial)    
+  - 1 × Dissolved Oxygen Sensor (Atlas Scientific Industrial)  
 
 - 1 × **Main Control Box**
   - Arduino Opta Wi-Fi PLC  
@@ -26,9 +26,14 @@ The system operates autonomously using an **Arduino Opta Wi-Fi PLC** with an **a
   - 1 Turbidity Sensor  
   - Outdoor 4G Router for data transmission  
 
+### **Secondary Installation (Antisa, Greece)**
+  - 1 × **Main Control Box**
+  - Arduino Opta Wi-Fi PLC  
+  - 1 × pH Sensor (Atlas Scientific Industrial)  
+  - 1 × Conductivity Sensor (Atlas Scientific Industrial)   
+
 All sensor data is collected by the main control unit, compiled into a `.csv` file, and sent via email every day.
 
 ---
 
-## Repository Structure
-
+Refer to /FAQs and /Documentation for further information and usage instructions.
