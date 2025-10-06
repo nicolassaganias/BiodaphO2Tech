@@ -15,7 +15,7 @@ unsigned long currentEpoch = 0;  // Stores the last synchronized epoch time
 
 // Wi-Fi Configuration
 const int WIFI_TIMEOUT = 600000;           // Maximum time to attempt Wi-Fi connection (in milliseconds)
-const int WIFI_RECONNECT_INTERVAL = 5000;  // Interval to check Wi-Fi connection status (in milliseconds)
+const int WIFI_RECONNECT_INTERVAL = 300000;  // Interval to check Wi-Fi connection status (in milliseconds)
 bool wifiConnected = false;                // Flag to indicate if Wi-Fi is connected
 unsigned long last_wifi_check = 0;         // Stores the last time Wi-Fi was checked
 
@@ -23,14 +23,18 @@ unsigned long last_wifi_check = 0;         // Stores the last time Wi-Fi was che
 EMailSender emailSend(EMAIL_ADDRESS, EMAIL_PASSWORD);  // Email sender instance
 
 String getTimestamp() {
-  if (currentEpoch == 0) {  // Si no se ha establecido la hora, retornar placeholder
+  if (currentEpoch == 0) {  // Si no hay hora válida todavía
     return "00:00:00";
   }
 
-  unsigned long epoch = currentEpoch;             // Usar la hora sincronizada tal cual
-  unsigned long hours = (epoch % 86400L) / 3600;  // Obtener horas
-  unsigned long minutes = (epoch % 3600) / 60;    // Obtener minutos
-  unsigned long seconds = epoch % 60;             // Obtener segundos
+  // Cuántos segundos pasaron desde la última sincronización NTP
+  unsigned long secondsPassed = (millis() - lastNTPUpdate) / 1000;
+
+  unsigned long nowEpoch = currentEpoch + secondsPassed;
+
+  unsigned long hours = (nowEpoch % 86400L) / 3600;
+  unsigned long minutes = (nowEpoch % 3600) / 60;
+  unsigned long seconds = nowEpoch % 60;
 
   char timestamp[10];
   sprintf(timestamp, "%02lu:%02lu:%02lu", hours, minutes, seconds);
@@ -87,12 +91,12 @@ bool syncNTP_UDP() {
   unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
   unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
   unsigned long epoch = (highWord << 16 | lowWord) - 2208988800UL;  // Convert to Unix time
-  epoch += TIMEZONE_OFFSET;                                         // Adjust for the desired timezone
+  epoch += TIMEZONE_OFFSET;  // Adjust for the desired timezone
 
   if (epoch > 100000) {  // Validate the epoch timestamp
-    currentEpoch = epoch;
+    currentEpoch = epoch;          // Set the new epoch received
+    lastNTPUpdate = millis();      // Set the millis() at the exact moment of sync
     ntpSynced = true;
-    lastNTPUpdate = millis();
     Serial.println("✅ NTP successfully synchronized.");
     return true;
   } else {  // If the timestamp is invalid, mark synchronization as failed
@@ -183,22 +187,30 @@ void sendSensorDataEmail() {
 #elif defined(ST2)
   message.subject = "Sensor Data Report - ST2 - " + getTimestamp();
 #elif defined(TEST)
-  message.subject = "Sensor Data Report - TEST - " + getTimestamp();
+  message.subject = "Sensor Data Report - TESTing - " + getTimestamp();
 #elif defined(GR)
   message.subject = "Sensor Data Report - GREECE - " + getTimestamp();
 #else
   message.subject = "Sensor Data Report - Unknown Station - " + getTimestamp();
 #endif
+
+  // Start constructing the email body
   message.message = "Sensor Readings:<br>";
+
+  // Add data from `allData` with proper formatting
   for (int i = nextDataIndex; i < numberOfData; i++) {
-    message.message += String(allData[i]);
+    message.message += String(allData[i]) + "<br>";  // Ensure each entry ends with a line break
   }
   for (int i = 0; i < nextDataIndex; i++) {
-    message.message += String(allData[i]);
+    message.message += String(allData[i]) + "<br>";  // Ensure each entry ends with a line break
   }
+
   message.message += "<br>Regards";
+
+  // Send the email
   EMailSender::Response resp = emailSend.send(RECEIVER_EMAIL, message);
-  //Serial.println(resp.status);
+  // Uncomment for debugging
+  // Serial.println(resp.status);
 }
 
 void sendFirstSensorDataEmail(float oxygen, float ec, float ph) {
@@ -208,7 +220,7 @@ void sendFirstSensorDataEmail(float oxygen, float ec, float ph) {
 #elif defined(ST2)
   message.subject = "Sensor Data Report - ST2 - " + getTimestamp();
 #elif defined(TEST)
-  message.subject = "Sensor Data Report - TEST - " + getTimestamp();
+  message.subject = "Sensor Data Report - TESTing - " + getTimestamp();
 #elif defined(GR)
   message.subject = "Sensor Data Report - GREECE - " + getTimestamp();
 #else
@@ -222,4 +234,35 @@ void sendFirstSensorDataEmail(float oxygen, float ec, float ph) {
   message.message += "\nRegards";
   EMailSender::Response resp = emailSend.send(RECEIVER_EMAIL, message);
   //Serial.println(resp.status);
+}
+
+void checkFailure() {
+  static unsigned long lastCheck = 0;
+  static int wifiFailCount = 0;
+  const unsigned long CHECK_INTERVAL = 10000;  // Cada 10 segundos
+  const unsigned long EMAIL_TIMEOUT = EMAIL_INTERVAL * 3;
+
+  if (millis() - lastCheck < CHECK_INTERVAL) return;
+  lastCheck = millis();
+
+  // Si no se ha enviado mail en mucho tiempo, algo puede andar mal
+  if (millis() - lastEmailSent > EMAIL_TIMEOUT) {
+    Serial.println("❌ Email not sent for too long. Restarting...");
+    delay(2000);
+    NVIC_SystemReset();
+  }
+
+  // Si el WiFi sigue caído, contamos intentos fallidos
+  if (WiFi.status() != WL_CONNECTED) {
+    wifiFailCount++;
+    Serial.print("⚠️ WiFi fail count: ");
+    Serial.println(wifiFailCount);
+    if (wifiFailCount >= 10) {
+      Serial.println("❌ WiFi failed to reconnect after 10 attempts. Restarting...");
+      delay(5000);
+      NVIC_SystemReset();
+    }
+  } else {
+    wifiFailCount = 0;
+  }
 }

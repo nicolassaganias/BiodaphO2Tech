@@ -21,8 +21,8 @@ float lec_AS_DO1_GR, lec_AS_PH1_GR, lec_AS_EC1_GR;
 
 // const char* ssid = "Outdoor-WiFi-255BC6";  // Cambiar por el nombre de tu red
 // const char* password = "oT0,2LiM-WlZ";     // Y obviamente la clave del WiFi
-const char* ssid = "Can_Saguer_Wifi";  // Cambiar por el nombre de tu red
-const char* password = "cansaguer2";   // Y obviamente la clave del WiFi
+const char* ssid = "Post 2.4";  // Cambiar por el nombre de tu red
+const char* password = "28742241";   // Y obviamente la clave del WiFi
 
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);  // Se usa este cliente como transporte para MQTT

@@ -37,14 +37,14 @@ WiFiClient wifiClient;
 PubSubClient client(wifiClient); // Se usa este cliente como transporte para MQTT
 
 long lastReconnectAttempt = 0;
-const long interval = 15000; // Intervalo entre lecturas (10s)
+const long interval = 60000; // Intervalo entre lecturas (10s)
 unsigned long lastReadingMillis = 0;
 
 const char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"; // Para generar ID random medio casero
 char id[17];
 
 int cnt = 0; // Contador para hacer una escritura por cada x publicaciones
-int pub = 18; //Cada cuantas publicaciones se hace una escritura presistente para el dashboard
+int pub = 10; //Cada cuantas publicaciones se hace una escritura presistente para el dashboard
 bool PubWrite = false; // True = persistente, false = publicado sin persistencia
 
 #define PERIODIC_UPDATE_TIME 500
